@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Flashcards Mini</title>
+
+<style>
+:root {
+  --bg: #0e1117;
+  --panel: #161b22;
+  --accent: #6ea8ff;
+  --text: #e6edf3;
+  --muted: #8b949e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #21262d;
+  font-weight: 600;
+}
+
+main {
+  max-width: 900px;
+  margin: auto;
+  padding: 24px;
+}
+
+.card-view {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 40px;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+button {
+  background: #21262d;
+  color: var(--text);
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #30363d;
+}
+
+.stats {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.editor {
+  margin-top: 40px;
+  background: var(--panel);
+  padding: 20px;
+  border-radius: 12px;
+}
+
+textarea {
+  width: 100%;
+  background: #0d1117;
+  color: var(--text);
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.editor button {
+  margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+<header>Flashcards Mini</header>
+
+<main>
+  <div class="card-view" id="card">Click to reveal</div>
+
+  <div class="controls">
+    <button onclick="mark(false)">Hard</button>
+    <button onclick="mark(true)">Easy</button>
+    <button onclick="nextCard()">Skip</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="editor">
+    <h3>Add Flashcard</h3>
+    <textarea id="front" placeholder="Front"></textarea><br><br>
+    <textarea id="back" placeholder="Back"></textarea><br>
+    <button onclick="addCard()">Add</button>
+  </div>
+</main>
+
+<script>
+const STORAGE_KEY = "flashcards-mini-data";
+
+let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
+  { front: "Capital of France?", back: "Paris", box: 1, due: Date.now() }
+];
+
+let showingBack = false;
+let current = null;
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function getNext() {
+  return data.sort((a,b)=>a.due-b.due)[0];
+}
+
+function render() {
+  current = getNext();
+  showingBack = false;
+  document.getElementById("card").textContent =
+    current ? current.front : "No cards";
+  updateStats();
+}
+
+function flip() {
+  if (!current) return;
+  showingBack = !showingBack;
+  document.getElementById("card").textContent =
+    showingBack ? current.back : current.front;
+}
+
+function mark(correct) {
+  if (!current) return;
+
+  if (correct) {
+    current.box = Math.min(current.box + 1, 5);
+  } else {
+    current.box = 1;
+  }
+
+  const delay = [0, 1, 5, 20, 60, 180][current.box] * 60000;
+  current.due = Date.now() + delay;
+
+  save();
+  render();
+}
+
+function nextCard() {
+  current.due = Date.now() + 60000;
+  save();
+  render();
+}
+
+function addCard() {
+  const front = document.getElementById("front").value.trim();
+  const back = document.getElementById("back").value.trim();
+  if (!front || !back) return;
+
+  data.push({ front, back, box: 1, due: Date.now() });
+  document.getElementById("front").value = "";
+  document.getElementById("back").value = "";
+  save();
+  render();
+}
+
+function updateStats() {
+  const due = data.filter(c => c.due <= Date.now()).length;
+  document.getElementById("stats").textContent =
+    `${data.length} cards • ${due} due now`;
+}
+
+document.getElementById("card").addEventListener("click", flip);
+document.addEventListener("keydown", e => {
+  if (e.key === " ") flip();
+  if (e.key === "ArrowRight") mark(true);
+  if (e.key === "ArrowLeft") mark(false);
+});
+
+render();
+</script>
+</body>
+</html>
