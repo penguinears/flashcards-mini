@@ -1,1 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlashCards.Fun</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #f5f7fa;
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .banner {
+        width: 90%;
+        max-width: 420px;
+        margin-top: 30px;
+    }
+
+    .banner img {
+        width: 100%;
+        display: block;
+    }
+
+    .box {
+        width: 90%;
+        max-width: 420px;
+        background: white;
+        margin-top: 25px;
+        padding: 25px 20px;
+        border-radius: 18px;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .option {
+        background: #ffffff;
+        padding: 18px;
+        border-radius: 14px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 34px;
+        cursor: pointer;
+        transition: 0.15s ease;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .option:hover {
+        transform: scale(1.04);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
+</style>
+</head>
+
+<body>
+
+<div class="banner">
+    <img src="images/FlashCards Made.Fun.png" alt="FlashCards Fun Banner">
+</div>
+
+<div class="box">
+    <div class="option">
+        <i class="fa-solid fa-circle-plus" style="color: rgb(23, 128, 212);"></i>
+    </div>
+
+    <div class="option">
+        <i class="fa-solid fa-gamepad" style="color: rgb(23, 128, 212);"></i>
+    </div>
+
+    <div class="option">
+        <i class="fa-solid fa-lightbulb" style="color: rgb(23, 128, 212);"></i>
+    </div>
+</div>
+
+</body>
+</html>
 
