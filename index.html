@@ -37,13 +37,20 @@
         border-radius: 18px;
         box-shadow: 0 4px 18px rgba(0,0,0,0.08);
         display: flex;
-        flex-direction: column;
-        gap: 18px;
+        justify-content: center;
+    }
+
+    .row {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        gap: 20px;
     }
 
     .option {
+        flex: 1;
         background: #ffffff;
-        padding: 18px;
+        padding: 18px 0;
         border-radius: 14px;
         display: flex;
         justify-content: center;
@@ -68,19 +75,20 @@
 </div>
 
 <div class="box">
-    <div class="option">
-        <i class="fa-solid fa-circle-plus" style="color: rgb(23, 128, 212);"></i>
-    </div>
+    <div class="row">
+        <div class="option">
+            <i class="fa-solid fa-circle-plus" style="color: rgb(23, 128, 212);"></i>
+        </div>
 
-    <div class="option">
-        <i class="fa-solid fa-gamepad" style="color: rgb(23, 128, 212);"></i>
-    </div>
+        <div class="option">
+            <i class="fa-solid fa-gamepad" style="color: rgb(23, 128, 212);"></i>
+        </div>
 
-    <div class="option">
-        <i class="fa-solid fa-lightbulb" style="color: rgb(23, 128, 212);"></i>
+        <div class="option">
+            <i class="fa-solid fa-lightbulb" style="color: rgb(23, 128, 212);"></i>
+        </div>
     </div>
 </div>
 
 </body>
 </html>
-
