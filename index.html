@@ -2,93 +2,429 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<title>Flappy Flashcard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FlashCards.Fun</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 <style>
     body {
         margin: 0;
-        padding: 0;
-        background: #f5f7fa;
-        font-family: 'Inter', sans-serif;
+        background: #111827;
         display: flex;
-        flex-direction: column;
+        justify-content: center;
         align-items: center;
+        height: 100vh;
+        font-family: 'Inter', sans-serif;
+        overflow: hidden;
     }
 
-    .banner {
-        width: 90%;
-        max-width: 420px;
-        margin-top: 30px;
-    }
-
-    .banner img {
+    #gameWrapper {
+        position: relative;
         width: 100%;
+        max-width: 480px;
+        aspect-ratio: 9/16;
+        background: linear-gradient(#1f2933, #111827);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+        border-radius: 18px;
+        overflow: hidden;
+    }
+
+    canvas {
+        width: 100%;
+        height: 100%;
         display: block;
     }
 
-    .box {
-        width: 90%;
-        max-width: 420px;
-        background: white;
-        margin-top: 25px;
-        padding: 25px 20px;
-        border-radius: 18px;
-        box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    .header {
+        position: absolute;
+        top: 10px;
+        left: 12px;
         display: flex;
+        align-items: center;
+        color: #fff;
+        font-size: 20px;
+        font-weight: 600;
+        z-index: 5;
+    }
+
+    .header img {
+        height: 32px;
+        margin-right: 8px;
+    }
+
+    .flashcard-modal-bg {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        display: none;
         justify-content: center;
+        align-items: center;
+        z-index: 10;
     }
 
-    .row {
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-        gap: 20px;
-    }
-
-    .option {
-        flex: 1;
+    .flashcard-modal {
+        width: 90%;
+        max-width: 360px;
         background: #ffffff;
-        padding: 18px 0;
-        border-radius: 14px;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    .flashcard-question {
+        font-size: 18px;
+        margin-bottom: 12px;
+        color: #111827;
+    }
+
+    .flashcard-input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    .flashcard-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .btn-primary {
+        background: rgb(23,128,212);
+        color: #fff;
+    }
+
+    .btn-secondary {
+        background: #e5e7eb;
+        color: #111827;
+    }
+
+    .you-died-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.9);
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: 34px;
-        cursor: pointer;
-        transition: 0.15s ease;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.8s ease;
+        z-index: 20;
     }
 
-    .option:hover {
-        transform: scale(1.04);
-        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    .you-died-overlay img {
+        max-width: 80%;
+        max-height: 80%;
+    }
+
+    .you-died-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .tap-hint {
+        position: absolute;
+        bottom: 12px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: #9ca3af;
+        font-size: 13px;
+        z-index: 5;
     }
 </style>
 </head>
-
 <body>
 
-<div class="banner">
-    <img src="images/FlashCards Made.Fun.png" alt="FlashCards Fun Banner">
-</div>
+<div id="gameWrapper">
+    <div class="header">
+        <img src="images/gamer.webp" alt="Gamer">
+        <span>Games · Flappy Flashcard</span>
+    </div>
 
-<div class="box">
-    <div class="row">
-        <div class="option">
-            <i class="fa-solid fa-circle-plus" style="color: rgb(23, 128, 212);"></i>
-        </div>
+    <canvas id="gameCanvas" width="320" height="568"></canvas>
 
-        <div class="option">
-            <i class="fa-solid fa-gamepad" style="color: rgb(23, 128, 212);"></i>
-        </div>
+    <div class="tap-hint">Tap / click to flap · Answer cards after each pipe</div>
 
-        <div class="option">
-            <i class="fa-solid fa-lightbulb" style="color: rgb(23, 128, 212);"></i>
+    <!-- Flashcard modal -->
+    <div class="flashcard-modal-bg" id="flashcardModalBg">
+        <div class="flashcard-modal">
+            <div class="flashcard-question" id="flashcardQuestion"></div>
+            <input id="flashcardAnswer" class="flashcard-input" placeholder="Type your answer">
+            <div class="flashcard-buttons">
+                <button class="btn btn-secondary" onclick="skipQuestion()">Skip</button>
+                <button class="btn btn-primary" onclick="submitAnswer()">Submit</button>
+            </div>
         </div>
     </div>
+
+    <!-- You Died overlay -->
+    <div class="you-died-overlay" id="youDiedOverlay">
+        <img src="images/You-Died-PNG-Photos.png" alt="You Died">
+    </div>
 </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const WIDTH = canvas.width;
+const HEIGHT = canvas.height;
+
+let birdImg = new Image();
+birdImg.src = "images/birb-removebg-preview (1).png";
+
+let pipeImg = new Image();
+pipeImg.src = "images/pipe-removebg-preview.png";
+
+let flappyIcon = new Image();
+flappyIcon.src = "https://th.bing.com/th/id/OIP.k1HhORIW40PVstuQSQoNZAHaHa?w=162&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3";
+
+let gameRunning = false;
+let gamePausedForQuestion = false;
+let bird = { x: 70, y: HEIGHT / 2, w: 40, h: 32, vy: 0 };
+let gravity = 0.4;
+let flapStrength = -7;
+let pipes = [];
+let pipeGap = 140;
+let pipeSpeed = 2.5;
+let pipeInterval = 1600;
+let lastPipeTime = 0;
+let lastFrameTime = 0;
+let currentQuestion = null;
+let currentPipeForQuestion = null;
+let cardsPool = [];
+let youDiedShown = false;
+
+// Load flashcards from localStorage
+function loadCards() {
+    try {
+        const stored = JSON.parse(localStorage.getItem("flashcards") || '{"collections":[]}');
+        const collections = stored.collections || [];
+        collections.forEach(col => {
+            (col.cards || []).forEach(card => {
+                if (card.front && card.back) {
+                    cardsPool.push({
+                        front: card.front,
+                        back: card.back
+                    });
+                }
+            });
+        });
+    } catch (e) {}
+
+    if (cardsPool.length === 0) {
+        cardsPool = [
+            { front: "2 + 2", back: "4" },
+            { front: "Capital of France", back: "Paris" },
+            { front: "H2O is?", back: "Water" }
+        ];
+    }
+}
+
+loadCards();
+
+function resetGame() {
+    bird.y = HEIGHT / 2;
+    bird.vy = 0;
+    pipes = [];
+    lastPipeTime = 0;
+    lastFrameTime = 0;
+    gameRunning = true;
+    gamePausedForQuestion = false;
+    youDiedShown = false;
+    document.getElementById('youDiedOverlay').classList.remove('show');
+}
+
+function spawnPipe() {
+    const minGapY = 80;
+    const maxGapY = HEIGHT - 80 - pipeGap;
+    const gapY = Math.random() * (maxGapY - minGapY) + minGapY;
+
+    pipes.push({
+        x: WIDTH + 40,
+        gapY: gapY,
+        w: 60,
+        passed: false,
+        asked: false
+    });
+}
+
+function update(dt) {
+    if (!gameRunning || gamePausedForQuestion) return;
+
+    bird.vy += gravity;
+    bird.y += bird.vy;
+
+    pipes.forEach(pipe => {
+        pipe.x -= pipeSpeed;
+    });
+
+    pipes = pipes.filter(p => p.x + p.w > -50);
+
+    // Collision with ground/ceiling
+    if (bird.y + bird.h > HEIGHT || bird.y < 0) {
+        die();
+    }
+
+    // Pipe collisions + question trigger (AFTER passing pipe)
+    pipes.forEach(pipe => {
+        const topPipeBottom = pipe.gapY;
+        const bottomPipeTop = pipe.gapY + pipeGap;
+
+        // Collision with pipes
+        if (bird.x + bird.w > pipe.x && bird.x < pipe.x + pipe.w) {
+            if (bird.y < topPipeBottom || bird.y + bird.h > bottomPipeTop) {
+                die();
+            }
+        }
+
+        // Trigger question AFTER passing pipe
+        if (!pipe.asked && bird.x > pipe.x + pipe.w) {
+            pipe.asked = true;
+            currentPipeForQuestion = pipe;
+            showQuestion();
+        }
+    });
+}
+
+function draw() {
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+    // Background
+    const grad = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+    grad.addColorStop(0, "#1f2933");
+    grad.addColorStop(1, "#111827");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    // Pipes
+    pipes.forEach(pipe => {
+        const topPipeBottom = pipe.gapY;
+        const bottomPipeTop = pipe.gapY + pipeGap;
+
+        const pipeWidth = pipe.w;
+        const pipeHeight = 260; // long pipe, trimmed visually by canvas
+
+        // Top pipe (flipped)
+        ctx.save();
+        ctx.translate(pipe.x + pipeWidth / 2, topPipeBottom);
+        ctx.scale(1, -1);
+        ctx.drawImage(pipeImg, -pipeWidth / 2, 0, pipeWidth, pipeHeight);
+        ctx.restore();
+
+        // Bottom pipe
+        ctx.drawImage(pipeImg, pipe.x, bottomPipeTop, pipeWidth, pipeHeight);
+    });
+
+    // Bird
+    ctx.drawImage(birdImg, bird.x, bird.y, bird.w, bird.h);
+}
+
+function loop(timestamp) {
+    if (!lastFrameTime) lastFrameTime = timestamp;
+    const dt = timestamp - lastFrameTime;
+    lastFrameTime = timestamp;
+
+    if (gameRunning && !gamePausedForQuestion) {
+        if (!lastPipeTime) lastPipeTime = timestamp;
+        if (timestamp - lastPipeTime > pipeInterval) {
+            spawnPipe();
+            lastPipeTime = timestamp;
+        }
+        update(dt);
+    }
+
+    draw();
+    requestAnimationFrame(loop);
+}
+
+function flap() {
+    if (!gameRunning || gamePausedForQuestion) return;
+    bird.vy = flapStrength;
+}
+
+canvas.addEventListener('mousedown', flap);
+canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    flap();
+}, { passive: false });
+
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.code === 'ArrowUp') {
+        flap();
+    }
+});
+
+// Flashcard modal logic
+const modalBg = document.getElementById('flashcardModalBg');
+const questionEl = document.getElementById('flashcardQuestion');
+const answerInput = document.getElementById('flashcardAnswer');
+
+function showQuestion() {
+    if (cardsPool.length === 0) return;
+    gamePausedForQuestion = true;
+    currentQuestion = cardsPool[Math.floor(Math.random() * cardsPool.length)];
+    questionEl.textContent = currentQuestion.front;
+    answerInput.value = "";
+    modalBg.style.display = "flex";
+    answerInput.focus();
+}
+
+function submitAnswer() {
+    if (!currentQuestion) return;
+    const userAnswer = answerInput.value.trim().toLowerCase();
+    const correct = (currentQuestion.back || "").trim().toLowerCase();
+
+    modalBg.style.display = "none";
+    gamePausedForQuestion = false;
+
+    if (userAnswer === correct) {
+        // Correct: continue
+        return;
+    } else {
+        // Wrong: die
+        die();
+    }
+}
+
+function skipQuestion() {
+    modalBg.style.display = "none";
+    gamePausedForQuestion = false;
+    die();
+}
+
+window.submitAnswer = submitAnswer;
+window.skipQuestion = skipQuestion;
+
+// Death logic
+function die() {
+    if (youDiedShown) return;
+    youDiedShown = true;
+    gameRunning = false;
+    gamePausedForQuestion = true;
+
+    const overlay = document.getElementById('youDiedOverlay');
+    overlay.classList.add('show');
+
+    setTimeout(() => {
+        window.location.href = "games.html";
+    }, 1500);
+}
+
+// Start
+resetGame();
+requestAnimationFrame(loop);
+</script>
 
 </body>
 </html>
