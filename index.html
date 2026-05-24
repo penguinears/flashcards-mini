@@ -2,226 +2,742 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Flappy Flashcard</title>
+<title>FlashCards.Fun – All In One</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 <style>
-    body {
-        margin: 0;
-        background: #111827;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        font-family: 'Inter', sans-serif;
-        overflow: hidden;
-    }
+:root {
+    --blue: rgb(23,128,212);
+    --bg: #f5f7fa;
+    --shadow: 0 4px 18px rgba(0,0,0,0.08);
+    --radius: 18px;
+    --transition: 0.2s ease;
+}
 
-    #gameWrapper {
-        position: relative;
-        width: 100%;
-        max-width: 480px;
-        aspect-ratio: 9/16;
-        background: linear-gradient(#1f2933, #111827);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.6);
-        border-radius: 18px;
-        overflow: hidden;
-    }
+* { box-sizing: border-box; }
 
-    canvas {
-        width: 100%;
-        height: 100%;
-        display: block;
-    }
+body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: #111827;
+}
 
-    .header {
-        position: absolute;
-        top: 10px;
-        left: 12px;
-        display: flex;
-        align-items: center;
-        color: #fff;
-        font-size: 20px;
-        font-weight: 600;
-        z-index: 5;
-    }
+/* App wrapper */
+#app {
+    max-width: 520px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+}
 
-    .header img {
-        height: 32px;
-        margin-right: 8px;
-    }
+/* Screens */
+.screen {
+    position: absolute;
+    inset: 0;
+    padding-bottom: 40px;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(10px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
 
-    .flashcard-modal-bg {
-        position: absolute;
-        inset: 0;
-        background: rgba(0,0,0,0.6);
-        display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 10;
-    }
+.screen.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+}
 
-    .flashcard-modal {
-        width: 90%;
-        max-width: 360px;
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-    }
+/* Shared UI */
+.banner img {
+    width: 100%;
+    display: block;
+}
 
-    .flashcard-question {
-        font-size: 18px;
-        margin-bottom: 12px;
-        color: #111827;
-    }
+.box {
+    width: 90%;
+    max-width: 500px;
+    margin: 25px auto 0;
+    background: #fff;
+    padding: 25px 20px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
 
-    .flashcard-input {
-        width: 100%;
-        padding: 10px;
-        border-radius: 10px;
-        border: 1px solid #d1d5db;
-        font-size: 16px;
-        margin-bottom: 12px;
-    }
+.row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
 
-    .flashcard-buttons {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-    }
+.option {
+    flex: 1;
+    background: #ffffff;
+    padding: 18px 0;
+    border-radius: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 34px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
 
-    .btn {
-        padding: 8px 14px;
-        border-radius: 999px;
-        border: none;
-        cursor: pointer;
-        font-size: 14px;
-    }
+.option:hover {
+    transform: scale(1.04);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
 
-    .btn-primary {
-        background: rgb(23,128,212);
-        color: #fff;
-    }
+.header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--blue);
+}
 
-    .btn-secondary {
-        background: #e5e7eb;
-        color: #111827;
-    }
+.header img {
+    height: 40px;
+    margin-right: 10px;
+}
 
-    .you-died-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(0,0,0,0.9);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.8s ease;
-        z-index: 20;
-    }
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    background: var(--blue);
+    color: #fff;
+}
 
-    .you-died-overlay img {
-        max-width: 80%;
-        max-height: 80%;
-    }
+/* Modal */
+.modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+}
 
-    .you-died-overlay.show {
-        opacity: 1;
-        pointer-events: auto;
-    }
+.modal {
+    background: white;
+    width: 90%;
+    max-width: 420px;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
 
-    .tap-hint {
-        position: absolute;
-        bottom: 12px;
-        left: 0;
-        right: 0;
-        text-align: center;
-        color: #9ca3af;
-        font-size: 13px;
-        z-index: 5;
-    }
+.collection {
+    padding: 14px;
+    border-radius: 12px;
+    background: #f0f4f8;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* Create / Edit */
+.input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+.card-row {
+    background: #eef6ff;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+
+.card-row .input {
+    margin-bottom: 8px;
+}
+
+.card-row .remove {
+    text-align: right;
+    font-size: 13px;
+    color: #ef4444;
+    cursor: pointer;
+}
+
+/* Games */
+.game {
+    width: 90%;
+    max-width: 500px;
+    margin: 10px auto;
+    background: white;
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+}
+
+.game img {
+    height: 60px;
+}
+
+/* Freestyle */
+.card-box {
+    width: 90%;
+    max-width: 500px;
+    margin: 20px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    font-size: 22px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    width: 90%;
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+.controls i {
+    font-size: 34px;
+    cursor: pointer;
+    color: var(--blue);
+}
+
+/* Flappy */
+#flappyWrapper {
+    width: 100%;
+    max-width: 480px;
+    margin: 10px auto 30px;
+    position: relative;
+    aspect-ratio: 9/16;
+    background: #111827;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+#gameCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.flappy-header {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    display: flex;
+    align-items: center;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    z-index: 5;
+}
+
+.flappy-header img {
+    height: 28px;
+    margin-right: 6px;
+}
+
+.tap-hint {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 13px;
+    z-index: 5;
+}
+
+/* Flashcard modal in flappy */
+.flashcard-modal-bg {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.flashcard-modal {
+    width: 90%;
+    max-width: 360px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+
+.flashcard-question {
+    font-size: 18px;
+    margin-bottom: 12px;
+    color: #111827;
+}
+
+.flashcard-input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.flashcard-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* You died overlay */
+.you-died-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+    z-index: 20;
+}
+
+.you-died-overlay img {
+    max-width: 80%;
+    max-height: 80%;
+}
+
+.you-died-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
 </style>
 </head>
 <body>
 
-<div id="gameWrapper">
-    <div class="header">
-        <img src="images/gamer.webp" alt="Gamer">
-        <span>Games · Flappy Flashcard</span>
-    </div>
+<div id="app">
 
-    <canvas id="gameCanvas" width="320" height="568"></canvas>
+    <!-- HOME -->
+    <div id="screen-home" class="screen active">
+        <div class="banner">
+            <img src="images/FlashCards Made.Fun.png" alt="FlashCards.Fun">
+        </div>
 
-    <div class="tap-hint">Tap / click to flap · Answer cards after each pipe</div>
-
-    <!-- Flashcard modal -->
-    <div class="flashcard-modal-bg" id="flashcardModalBg">
-        <div class="flashcard-modal">
-            <div class="flashcard-question" id="flashcardQuestion"></div>
-            <input id="flashcardAnswer" class="flashcard-input" placeholder="Type your answer">
-            <div class="flashcard-buttons">
-                <button class="btn btn-secondary" onclick="skipQuestion()">Skip</button>
-                <button class="btn btn-primary" onclick="submitAnswer()">Submit</button>
+        <div class="box">
+            <div class="row">
+                <div class="option" onclick="openCollectionModal()">
+                    <i class="fa-solid fa-circle-plus" style="color: rgb(23, 128, 212);"></i>
+                </div>
+                <div class="option" onclick="showScreen('games')">
+                    <i class="fa-solid fa-gamepad" style="color: rgb(23, 128, 212);"></i>
+                </div>
+                <div class="option" onclick="showScreen('freestyle')">
+                    <i class="fa-solid fa-lightbulb" style="color: rgb(23, 128, 212);"></i>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- You Died overlay -->
-    <div class="you-died-overlay" id="youDiedOverlay">
-        <img src="images/You-Died-PNG-Photos.png" alt="You Died">
+    <!-- CREATE / EDIT -->
+    <div id="screen-create" class="screen">
+        <div class="header">
+            <i class="fa-solid fa-circle-plus" style="margin-right:10px;"></i>
+            Collections
+        </div>
+
+        <div class="box" id="collectionsBox">
+            <button class="btn" onclick="startNewCollection()">
+                <i class="fa-solid fa-plus" style="margin-right:6px;"></i> New Collection
+            </button>
+            <div id="collectionsList" style="margin-top:15px;"></div>
+        </div>
+
+        <div class="box" id="editorBox" style="margin-top:15px; display:none;">
+            <input id="collectionName" class="input" placeholder="Collection name">
+            <div id="cardsContainer"></div>
+            <button class="btn" style="width:100%;margin-top:6px;" onclick="addCardRow()">
+                Add Card
+            </button>
+            <button class="btn" style="width:100%;margin-top:10px;background:#0a74c4;" onclick="saveCollection()">
+                Save Collection
+            </button>
+            <button class="btn" style="width:100%;margin-top:10px;background:#6b7280;" onclick="cancelEdit()">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- GAMES -->
+    <div id="screen-games" class="screen">
+        <div class="header">
+            <img src="images/gamer.webp" alt="Gamer">
+            Games
+        </div>
+
+        <div class="game" onclick="startFlappyFromGames()">
+            <img src="https://th.bing.com/th/id/OIP.k1HhORIW40PVstuQSQoNZAHaHa?w=162&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3" alt="Flappy Icon">
+            <div>Flappy Flashcard</div>
+        </div>
+
+        <div style="width:90%;max-width:500px;margin:20px auto 0;text-align:center;">
+            <button class="btn" onclick="showScreen('home')">
+                <i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i> Back Home
+            </button>
+        </div>
+    </div>
+
+    <!-- FREESTYLE -->
+    <div id="screen-freestyle" class="screen">
+        <div class="header">
+            <i class="fa-solid fa-lightbulb" style="margin-right:10px;"></i>
+            Freestyle
+        </div>
+
+        <div class="box" style="margin-top:0;">
+            <div style="font-size:14px;margin-bottom:10px;">Using all cards from all collections.</div>
+            <button class="btn" onclick="reloadFreestyleCards()">
+                Reload Cards
+            </button>
+        </div>
+
+        <div class="card-box" id="freestyleCardBox">Loading...</div>
+
+        <div class="controls">
+            <i class="fa-solid fa-arrow-left" onclick="freestylePrev()"></i>
+            <i class="fa-solid fa-xmark" style="color:red;" onclick="freestyleFlip()"></i>
+            <i class="fa-solid fa-check" style="color:green;" onclick="freestyleFlip()"></i>
+            <i class="fa-solid fa-arrow-right" onclick="freestyleNext()"></i>
+        </div>
+
+        <div style="width:90%;max-width:500px;margin:10px auto 0;text-align:center;">
+            <button class="btn" onclick="showScreen('home')">
+                <i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i> Back Home
+            </button>
+        </div>
+    </div>
+
+    <!-- FLAPPY -->
+    <div id="screen-flappy" class="screen">
+        <div class="header">
+            <img src="images/gamer.webp" alt="Gamer">
+            Flappy Flashcard
+        </div>
+
+        <div class="box" style="margin-top:0;">
+            <div style="font-size:14px;margin-bottom:10px;">
+                Uses all cards from your collections. Tap to start, tap to flap. After each pipe, answer a card.
+            </div>
+            <button class="btn" onclick="showScreen('games')">
+                <i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i> Back to Games
+            </button>
+        </div>
+
+        <div id="flappyWrapper">
+            <canvas id="gameCanvas" width="320" height="568"></canvas>
+
+            <div class="flappy-header">
+                <img src="images/gamer.webp" alt="Gamer">
+                <span>Flappy Flashcard</span>
+            </div>
+
+            <div class="tap-hint" id="tapHint">Tap / click to start</div>
+
+            <div class="flashcard-modal-bg" id="flashcardModalBg">
+                <div class="flashcard-modal">
+                    <div class="flashcard-question" id="flashcardQuestion"></div>
+                    <input id="flashcardAnswer" class="flashcard-input" placeholder="Type your answer">
+                    <div class="flashcard-buttons">
+                        <button class="btn" style="background:#e5e7eb;color:#111827;" onclick="skipQuestion()">Skip</button>
+                        <button class="btn" onclick="submitAnswer()">Submit</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="you-died-overlay" id="youDiedOverlay">
+                <img src="images/You-Died-PNG-Photos.png" alt="You Died">
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- COLLECTION MODAL (HOME) -->
+<div class="modal-bg" id="collectionModal">
+    <div class="modal">
+        <h2 style="margin-top:0;color:var(--blue);font-size:20px;">Collections</h2>
+        <div class="collection" onclick="goToCreateScreen()">+ Create / Edit Collections</div>
+        <div id="homeCollectionsList" style="margin-top:10px;"></div>
+        <button class="btn" style="margin-top:10px;" onclick="closeCollectionModal()">Close</button>
     </div>
 </div>
 
 <script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+/* SCREEN NAVIGATION */
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + id).classList.add('active');
 
-const WIDTH = canvas.width;
-const HEIGHT = canvas.height;
+    if (id === 'freestyle') reloadFreestyleCards();
+    if (id === 'flappy') initFlappyIfNeeded();
+    if (id === 'create') loadCollectionsList();
+}
 
+/* COLLECTION MODAL ON HOME */
+function openCollectionModal() {
+    document.getElementById('collectionModal').style.display = 'flex';
+    loadHomeCollections();
+}
+function closeCollectionModal() {
+    document.getElementById('collectionModal').style.display = 'none';
+}
+function goToCreateScreen() {
+    closeCollectionModal();
+    showScreen('create');
+}
+function loadHomeCollections() {
+    const list = document.getElementById('homeCollectionsList');
+    list.innerHTML = '';
+    const stored = JSON.parse(localStorage.getItem('flashcards') || '{"collections":[]}');
+    stored.collections.forEach(col => {
+        const div = document.createElement('div');
+        div.className = 'collection';
+        div.textContent = col.name;
+        div.onclick = () => {
+            closeCollectionModal();
+            showScreen('create');
+            startEditCollection(col.id);
+        };
+        list.appendChild(div);
+    });
+}
+
+/* COLLECTIONS + EDITOR */
+let editingId = null;
+let editorCards = [];
+
+function getStored() {
+    return JSON.parse(localStorage.getItem('flashcards') || '{"collections":[]}');
+}
+function saveStored(data) {
+    localStorage.setItem('flashcards', JSON.stringify(data));
+}
+
+function loadCollectionsList() {
+    const box = document.getElementById('collectionsList');
+    box.innerHTML = '';
+    const stored = getStored();
+    stored.collections.forEach(col => {
+        const row = document.createElement('div');
+        row.className = 'collection';
+        row.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span>${col.name}</span>
+                <span style="font-size:12px;color:#6b7280;">${col.cards.length} cards</span>
+            </div>
+        `;
+        row.onclick = () => startEditCollection(col.id);
+        box.appendChild(row);
+    });
+}
+
+function startNewCollection() {
+    editingId = null;
+    editorCards = [];
+    document.getElementById('collectionName').value = '';
+    document.getElementById('cardsContainer').innerHTML = '';
+    document.getElementById('editorBox').style.display = 'block';
+}
+
+function startEditCollection(id) {
+    const stored = getStored();
+    const col = stored.collections.find(c => c.id === id);
+    if (!col) return;
+    editingId = id;
+    editorCards = col.cards.map(c => ({ id: Date.now() + Math.random(), front: c.front, back: c.back }));
+    document.getElementById('collectionName').value = col.name;
+    renderCardRows();
+    document.getElementById('editorBox').style.display = 'block';
+}
+
+function renderCardRows() {
+    const container = document.getElementById('cardsContainer');
+    container.innerHTML = '';
+    editorCards.forEach(card => {
+        const div = document.createElement('div');
+        div.className = 'card-row';
+        div.innerHTML = `
+            <input class="input" placeholder="Front" value="${card.front.replace(/"/g,'&quot;')}" 
+                onchange="updateCardRow(${card.id}, 'front', this.value)">
+            <input class="input" placeholder="Back" value="${card.back.replace(/"/g,'&quot;')}" 
+                onchange="updateCardRow(${card.id}, 'back', this.value)">
+            <div class="remove" onclick="removeCardRow(${card.id})">Remove</div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function addCardRow() {
+    editorCards.push({ id: Date.now() + Math.random(), front: '', back: '' });
+    renderCardRows();
+}
+
+function updateCardRow(id, field, value) {
+    const card = editorCards.find(c => c.id === id);
+    if (card) card[field] = value;
+}
+
+function removeCardRow(id) {
+    editorCards = editorCards.filter(c => c.id !== id);
+    renderCardRows();
+}
+
+function saveCollection() {
+    const name = document.getElementById('collectionName').value.trim();
+    if (!name) { alert('Name required'); return; }
+
+    const stored = getStored();
+    if (editingId) {
+        const col = stored.collections.find(c => c.id === editingId);
+        if (!col) return;
+        col.name = name;
+        col.cards = editorCards.map(c => ({ front: c.front, back: c.back }));
+    } else {
+        stored.collections.push({
+            id: name.toLowerCase().replace(/\s+/g, '-'),
+            name,
+            cards: editorCards.map(c => ({ front: c.front, back: c.back }))
+        });
+    }
+    saveStored(stored);
+    document.getElementById('editorBox').style.display = 'none';
+    loadCollectionsList();
+}
+
+function cancelEdit() {
+    document.getElementById('editorBox').style.display = 'none';
+}
+
+/* FREESTYLE */
+let freestyleCards = [];
+let freestyleIndex = 0;
+let freestyleFront = true;
+
+function reloadFreestyleCards() {
+    freestyleCards = [];
+    const stored = getStored();
+    stored.collections.forEach(c => c.cards.forEach(card => freestyleCards.push(card)));
+    if (freestyleCards.length === 0) {
+        freestyleCards = [{ front: 'No cards yet', back: 'Create a collection first.' }];
+    }
+    freestyleIndex = 0;
+    freestyleFront = true;
+    updateFreestyleView();
+}
+
+function updateFreestyleView() {
+    const card = freestyleCards[freestyleIndex];
+    document.getElementById('freestyleCardBox').textContent = freestyleFront ? card.front : card.back;
+}
+
+function freestyleFlip() {
+    freestyleFront = !freestyleFront;
+    updateFreestyleView();
+}
+
+function freestyleNext() {
+    freestyleIndex = (freestyleIndex + 1) % freestyleCards.length;
+    freestyleFront = true;
+    updateFreestyleView();
+}
+
+function freestylePrev() {
+    freestyleIndex = (freestyleIndex - 1 + freestyleCards.length) % freestyleCards.length;
+    freestyleFront = true;
+    updateFreestyleView();
+}
+
+/* FLAPPY GAME */
+let flappyInitialized = false;
+let canvas, ctx;
+let WIDTH, HEIGHT;
 let birdImg = new Image();
 birdImg.src = "images/birb-removebg-preview (1).png";
-
 let pipeImg = new Image();
 pipeImg.src = "images/pipe-removebg-preview.png";
 
-let flappyIcon = new Image();
-flappyIcon.src = "https://th.bing.com/th/id/OIP.k1HhORIW40PVstuQSQoNZAHaHa?w=162&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3";
-
-let gameRunning = false;
-let gamePausedForQuestion = false;
-let bird = { x: 70, y: HEIGHT / 2, w: 40, h: 32, vy: 0 };
-let gravity = 0.4;
-let flapStrength = -7;
-let pipes = [];
-let pipeGap = 140;
-let pipeSpeed = 2.5;
-let pipeInterval = 1600;
+let bird, gravity, flapStrength, pipes, pipeGap, pipeSpeed, pipeInterval;
 let lastPipeTime = 0;
 let lastFrameTime = 0;
+let gameRunning = false;
+let waitingForStart = true;
+let gamePausedForQuestion = false;
+let cardsPool = [];
 let currentQuestion = null;
 let currentPipeForQuestion = null;
-let cardsPool = [];
 let youDiedShown = false;
 
-// Load flashcards from localStorage
-function loadCards() {
-    try {
-        const stored = JSON.parse(localStorage.getItem("flashcards") || '{"collections":[]}');
-        const collections = stored.collections || [];
-        collections.forEach(col => {
-            (col.cards || []).forEach(card => {
-                if (card.front && card.back) {
-                    cardsPool.push({
-                        front: card.front,
-                        back: card.back
-                    });
-                }
-            });
-        });
-    } catch (e) {}
+function initFlappyIfNeeded() {
+    if (flappyInitialized) {
+        resetFlappyGame();
+        return;
+    }
+    flappyInitialized = true;
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d');
+    WIDTH = canvas.width;
+    HEIGHT = canvas.height;
 
+    canvas.addEventListener('mousedown', handleFlappyTap);
+    canvas.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        handleFlappyTap();
+    }, { passive: false });
+
+    document.addEventListener('keydown', e => {
+        if (e.code === 'Space' || e.code === 'ArrowUp') {
+            handleFlappyTap();
+        }
+    });
+
+    loadFlappyCards();
+    resetFlappyGame();
+    requestAnimationFrame(flappyLoop);
+}
+
+function loadFlappyCards() {
+    cardsPool = [];
+    const stored = getStored();
+    stored.collections.forEach(col => {
+        (col.cards || []).forEach(card => {
+            if (card.front && card.back) cardsPool.push({ front: card.front, back: card.back });
+        });
+    });
     if (cardsPool.length === 0) {
         cardsPool = [
             { front: "2 + 2", back: "4" },
@@ -231,199 +747,180 @@ function loadCards() {
     }
 }
 
-loadCards();
-
-function resetGame() {
-    bird.y = HEIGHT / 2;
-    bird.vy = 0;
+function resetFlappyGame() {
+    bird = { x: 70, y: HEIGHT / 2, w: 40, h: 32, vy: 0 };
+    gravity = 0.4;
+    flapStrength = -7;
     pipes = [];
+    pipeGap = 140;
+    pipeSpeed = 2.5;
+    pipeInterval = 1600;
     lastPipeTime = 0;
     lastFrameTime = 0;
-    gameRunning = true;
+    gameRunning = false;
+    waitingForStart = true;
     gamePausedForQuestion = false;
     youDiedShown = false;
     document.getElementById('youDiedOverlay').classList.remove('show');
+    document.getElementById('flashcardModalBg').style.display = 'none';
+    document.getElementById('tapHint').textContent = 'Tap / click to start';
+}
+
+function handleFlappyTap() {
+    if (youDiedShown) return;
+    if (waitingForStart) {
+        waitingForStart = false;
+        gameRunning = true;
+        document.getElementById('tapHint').textContent = 'Tap / click to flap';
+        return;
+    }
+    if (!gameRunning || gamePausedForQuestion) return;
+    bird.vy = flapStrength;
 }
 
 function spawnPipe() {
     const minGapY = 80;
     const maxGapY = HEIGHT - 80 - pipeGap;
     const gapY = Math.random() * (maxGapY - minGapY) + minGapY;
-
     pipes.push({
         x: WIDTH + 40,
-        gapY: gapY,
+        gapY,
         w: 60,
-        passed: false,
         asked: false
     });
 }
 
-function update(dt) {
-    if (!gameRunning || gamePausedForQuestion) return;
+function flappyUpdate(dt, timestamp) {
+    if (!gameRunning || gamePausedForQuestion || waitingForStart) return;
 
     bird.vy += gravity;
     bird.y += bird.vy;
 
-    pipes.forEach(pipe => {
-        pipe.x -= pipeSpeed;
-    });
-
+    pipes.forEach(pipe => pipe.x -= pipeSpeed);
     pipes = pipes.filter(p => p.x + p.w > -50);
 
-    // Collision with ground/ceiling
     if (bird.y + bird.h > HEIGHT || bird.y < 0) {
-        die();
+        flappyDie();
     }
 
-    // Pipe collisions + question trigger (AFTER passing pipe)
     pipes.forEach(pipe => {
         const topPipeBottom = pipe.gapY;
         const bottomPipeTop = pipe.gapY + pipeGap;
 
-        // Collision with pipes
         if (bird.x + bird.w > pipe.x && bird.x < pipe.x + pipe.w) {
             if (bird.y < topPipeBottom || bird.y + bird.h > bottomPipeTop) {
-                die();
+                flappyDie();
             }
         }
 
-        // Trigger question AFTER passing pipe
         if (!pipe.asked && bird.x > pipe.x + pipe.w) {
             pipe.asked = true;
             currentPipeForQuestion = pipe;
-            showQuestion();
+            showFlappyQuestion();
         }
     });
+
+    if (!lastPipeTime) lastPipeTime = timestamp;
+    if (timestamp - lastPipeTime > pipeInterval) {
+        spawnPipe();
+        lastPipeTime = timestamp;
+    }
 }
 
-function draw() {
+function flappyDraw() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
-
-    // Background
     const grad = ctx.createLinearGradient(0, 0, 0, HEIGHT);
     grad.addColorStop(0, "#1f2933");
     grad.addColorStop(1, "#111827");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    // Pipes
     pipes.forEach(pipe => {
         const topPipeBottom = pipe.gapY;
         const bottomPipeTop = pipe.gapY + pipeGap;
-
         const pipeWidth = pipe.w;
-        const pipeHeight = 260; // long pipe, trimmed visually by canvas
+        const pipeHeight = 260;
 
-        // Top pipe (flipped)
         ctx.save();
         ctx.translate(pipe.x + pipeWidth / 2, topPipeBottom);
         ctx.scale(1, -1);
         ctx.drawImage(pipeImg, -pipeWidth / 2, 0, pipeWidth, pipeHeight);
         ctx.restore();
 
-        // Bottom pipe
         ctx.drawImage(pipeImg, pipe.x, bottomPipeTop, pipeWidth, pipeHeight);
     });
 
-    // Bird
     ctx.drawImage(birdImg, bird.x, bird.y, bird.w, bird.h);
 }
 
-function loop(timestamp) {
+function flappyLoop(timestamp) {
     if (!lastFrameTime) lastFrameTime = timestamp;
     const dt = timestamp - lastFrameTime;
     lastFrameTime = timestamp;
 
-    if (gameRunning && !gamePausedForQuestion) {
-        if (!lastPipeTime) lastPipeTime = timestamp;
-        if (timestamp - lastPipeTime > pipeInterval) {
-            spawnPipe();
-            lastPipeTime = timestamp;
-        }
-        update(dt);
-    }
-
-    draw();
-    requestAnimationFrame(loop);
+    flappyUpdate(dt, timestamp);
+    flappyDraw();
+    requestAnimationFrame(flappyLoop);
 }
 
-function flap() {
-    if (!gameRunning || gamePausedForQuestion) return;
-    bird.vy = flapStrength;
-}
+/* Flappy flashcard modal */
+const flashcardModalBg = document.getElementById('flashcardModalBg');
+const flashcardQuestionEl = document.getElementById('flashcardQuestion');
+const flashcardAnswerInput = document.getElementById('flashcardAnswer');
 
-canvas.addEventListener('mousedown', flap);
-canvas.addEventListener('touchstart', function(e) {
-    e.preventDefault();
-    flap();
-}, { passive: false });
-
-document.addEventListener('keydown', e => {
-    if (e.code === 'Space' || e.code === 'ArrowUp') {
-        flap();
-    }
-});
-
-// Flashcard modal logic
-const modalBg = document.getElementById('flashcardModalBg');
-const questionEl = document.getElementById('flashcardQuestion');
-const answerInput = document.getElementById('flashcardAnswer');
-
-function showQuestion() {
+function showFlappyQuestion() {
     if (cardsPool.length === 0) return;
     gamePausedForQuestion = true;
     currentQuestion = cardsPool[Math.floor(Math.random() * cardsPool.length)];
-    questionEl.textContent = currentQuestion.front;
-    answerInput.value = "";
-    modalBg.style.display = "flex";
-    answerInput.focus();
+    flashcardQuestionEl.textContent = currentQuestion.front;
+    flashcardAnswerInput.value = '';
+    flashcardModalBg.style.display = 'flex';
+    flashcardAnswerInput.focus();
 }
 
 function submitAnswer() {
     if (!currentQuestion) return;
-    const userAnswer = answerInput.value.trim().toLowerCase();
-    const correct = (currentQuestion.back || "").trim().toLowerCase();
-
-    modalBg.style.display = "none";
+    const userAnswer = flashcardAnswerInput.value.trim().toLowerCase();
+    const correct = (currentQuestion.back || '').trim().toLowerCase();
+    flashcardModalBg.style.display = 'none';
     gamePausedForQuestion = false;
-
-    if (userAnswer === correct) {
-        // Correct: continue
-        return;
-    } else {
-        // Wrong: die
-        die();
+    if (userAnswer !== correct) {
+        flappyDie();
     }
 }
 
 function skipQuestion() {
-    modalBg.style.display = "none";
+    flashcardModalBg.style.display = 'none';
     gamePausedForQuestion = false;
-    die();
+    flappyDie();
 }
 
 window.submitAnswer = submitAnswer;
 window.skipQuestion = skipQuestion;
 
-// Death logic
-function die() {
+function flappyDie() {
     if (youDiedShown) return;
     youDiedShown = true;
     gameRunning = false;
     gamePausedForQuestion = true;
-
-    const overlay = document.getElementById('youDiedOverlay');
-    overlay.classList.add('show');
-
+    waitingForStart = false;
+    document.getElementById('youDiedOverlay').classList.add('show');
     setTimeout(() => {
-        window.location.href = "games.html";
+        document.getElementById('youDiedOverlay').classList.remove('show');
+        showScreen('games');
+        resetFlappyGame();
     }, 1500);
 }
 
-// Start
-resetGame();
-requestAnimationFrame(loop);
+/* GAMES → FLAPPY */
+function startFlappyFromGames() {
+    showScreen('flappy');
+}
+
+/* INIT */
+document.addEventListener('DOMContentLoaded', () => {
+    showScreen('home');
+});
 </script>
 
 </body>
